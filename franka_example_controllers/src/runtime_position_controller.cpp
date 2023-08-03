@@ -64,6 +64,7 @@ controller_interface::return_type RuntimePositionController::update(
     RCLCPP_INFO(get_node()->get_logger(), "No new goal detected");
   }
   q_current_goal_ = q_goal_;
+  RCLCPP_INFO(get_node()->get_logger(), "current goal is: '%f'", q_current_goal_[0]);
   auto trajectory_time = this->get_node()->now() - start_time_;
   auto motion_generator_output = motion_generator_->getDesiredJointPositions(trajectory_time);
   Vector7d q_desired = motion_generator_output.first;
@@ -85,7 +86,7 @@ controller_interface::return_type RuntimePositionController::update(
 }
 
 CallbackReturn RuntimePositionController::on_init() {
-  q_goal_ << 0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
+  q_goal_ << M_PI_4, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
   try {
     auto_declare<std::string>("arm_id", "panda");
     auto_declare<std::vector<double>>("k_gains", {});

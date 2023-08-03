@@ -36,9 +36,7 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            DeclareLaunchArgument(
-                robot_ip_parameter_name, description='Hostname or IP address of the robot.'
-            ),
+            DeclareLaunchArgument(robot_ip_parameter_name, description='Hostname or IP address of the robot.'),
             DeclareLaunchArgument(
                 use_rviz_parameter_name,
                 default_value='false',
@@ -60,17 +58,12 @@ def generate_launch_description():
                 load_gripper_parameter_name,
                 default_value='true',
                 description=(
-                    'Use Franka Gripper as an end-effector, otherwise, the robot is loaded '
-                    'without an end-effector.'
+                    'Use Franka Gripper as an end-effector, otherwise, the robot is loaded ' 'without an end-effector.'
                 ),
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    [
-                        PathJoinSubstitution(
-                            [FindPackageShare('franka_bringup'), 'launch', 'franka.launch.py']
-                        )
-                    ]
+                    [PathJoinSubstitution([FindPackageShare('franka_bringup'), 'launch', 'franka.launch.py'])]
                 ),
                 launch_arguments={
                     robot_ip_parameter_name: robot_ip,
