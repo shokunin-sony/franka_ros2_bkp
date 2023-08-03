@@ -23,4 +23,10 @@
             The franka model example controller evaluates and prints the dynamic model of Franka Emika Robots.
         </description>
     </class>
+    <class name="franka_example_controllers/RuntimePositionController"
+           type="franka_example_controllers::RuntimePositionController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The runtime position controller can move the robot to the desired pose in runtime.
+        </description>
+    </class>
 </library>

@@ -13,8 +13,13 @@
   <depend>controller_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>rclcpp_components</depend>
   <depend>franka_msgs</depend>
   <depend>franka_semantic_components</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>libfranka</depend>
   
 
   <test_depend>ament_cmake_clang_format</test_depend>

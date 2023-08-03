@@ -11,6 +11,9 @@ controller_manager:
     move_to_start_example_controller:
       type: franka_example_controllers/MoveToStartExampleController
 
+    runtime_position_controller:
+      type: franka_example_controllers/RuntimePositionController
+
     model_example_controller:
       type: franka_example_controllers/ModelExampleController
 
@@ -75,6 +78,25 @@ joint_impedance_example_controller:
       - 1.0
       - 0.5
 move_to_start_example_controller:
+  ros__parameters:
+    arm_id: panda
+    k_gains:
+      - 600.0
+      - 600.0
+      - 600.0
+      - 600.0
+      - 250.0
+      - 150.0
+      - 50.0
+    d_gains:
+      - 30.0
+      - 30.0
+      - 30.0
+      - 30.0
+      - 10.0
+      - 10.0
+      - 5.
+runtime_position_controller:
   ros__parameters:
     arm_id: panda
     k_gains:
