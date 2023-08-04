@@ -11,7 +11,7 @@ def generate_launch_description():
     goal_position_value_launch_arg = DeclareLaunchArgument(
         'goal_position',
         description="goal joint/goal position ",
-        default_value="[0.0, -0.7854, 0.0, -2.3562, 0.0, 1.5708, 0.7854]",
+        default_value="[-1.5708, -0.7854, 0.0, -2.3562, 0.0, 1.5708, 0.7854]",
     )
 
     runtime_pos_demo = Node(

@@ -57,17 +57,23 @@ controller_interface::return_type RuntimePositionController::update(
 
   if (new_goal_is_received_) {
     RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
+    RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
+    RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
+
     motion_generator_ = std::make_unique<MotionGenerator>(0.2, q_, q_goal_);
+
     start_time_ = this->get_node()->now();
     new_goal_is_received_ = false;  // follow the current goal until a different goal is received
-  } else {
-    RCLCPP_INFO(get_node()->get_logger(), "No new goal detected");
   }
   q_current_goal_ = q_goal_;
-  RCLCPP_INFO(get_node()->get_logger(), "current goal is: '%f'", q_current_goal_[0]);
   auto trajectory_time = this->get_node()->now() - start_time_;
+  RCLCPP_INFO(get_node()->get_logger(), "trajectory_time_ is: %f", trajectory_time.seconds());
+
   auto motion_generator_output = motion_generator_->getDesiredJointPositions(trajectory_time);
   Vector7d q_desired = motion_generator_output.first;
+  RCLCPP_INFO(get_node()->get_logger(), "current desired position of joint '%d' is: '%f'", 1,
+              q_desired[0]);
+
   bool finished = motion_generator_output.second;
   if (not finished) {
     const double kAlpha = 0.99;
@@ -86,7 +92,7 @@ controller_interface::return_type RuntimePositionController::update(
 }
 
 CallbackReturn RuntimePositionController::on_init() {
-  q_goal_ << M_PI_4, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
+  q_goal_ << M_PI, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
   try {
     auto_declare<std::string>("arm_id", "panda");
     auto_declare<std::vector<double>>("k_gains", {});
@@ -167,8 +173,8 @@ void RuntimePositionController::updateJointStates() {
 
     assert(position_interface.get_interface_name() == "position");
     assert(velocity_interface.get_interface_name() == "velocity");
-    RCLCPP_INFO(get_node()->get_logger(), "Current position of joint %d is %f", i,
-                position_interface.get_value());
+    // RCLCPP_INFO(get_node()->get_logger(), "Current position of joint %d is %f", i,
+    //             position_interface.get_value());
     q_(i) = position_interface.get_value();
     dq_(i) = velocity_interface.get_value();
   }
