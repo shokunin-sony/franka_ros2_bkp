@@ -27,12 +27,14 @@ def generate_launch_description():
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
     use_rviz_parameter_name = 'use_rviz'
+    speed_factor_parameter_name = 'speed_factor'
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
+    speed_factor = LaunchConfiguration(speed_factor_parameter_name)
 
     return LaunchDescription(
         [
@@ -56,6 +58,11 @@ def generate_launch_description():
                 description='Use Franka Gripper as an end-effector, otherwise, the robot is loaded '
                 'without an end-effector.',
             ),
+            DeclareLaunchArgument(
+                speed_factor_parameter_name,
+                default_value='0.2',
+                description='speed factor for motion generator, (0, 1] ',
+            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     [PathJoinSubstitution([FindPackageShare('franka_bringup'), 'launch', 'franka.launch.py'])]
@@ -66,6 +73,7 @@ def generate_launch_description():
                     use_fake_hardware_parameter_name: use_fake_hardware,
                     fake_sensor_commands_parameter_name: fake_sensor_commands,
                     use_rviz_parameter_name: use_rviz,
+                    speed_factor: speed_factor_parameter_name,
                 }.items(),
             ),
             Node(
@@ -73,6 +81,9 @@ def generate_launch_description():
                 executable='spawner',
                 arguments=['runtime_position_controller'],
                 output='screen',
+                parameters=[
+                    {speed_factor_parameter_name: speed_factor},
+                ],
             ),
         ]
     )

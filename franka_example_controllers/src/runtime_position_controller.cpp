@@ -60,7 +60,7 @@ controller_interface::return_type RuntimePositionController::update(
     RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
     RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
 
-    motion_generator_ = std::make_unique<MotionGenerator>(0.2, q_, q_goal_);
+    motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
 
     start_time_ = this->get_node()->now();
     new_goal_is_received_ = false;  // follow the current goal until a different goal is received
@@ -161,7 +161,7 @@ CallbackReturn RuntimePositionController::on_configure(
 CallbackReturn RuntimePositionController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
-  motion_generator_ = std::make_unique<MotionGenerator>(0.2, q_, q_goal_);
+  motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
   start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;
 }
