@@ -43,6 +43,7 @@ class RuntimeImpedanceController : public controller_interface::ControllerInterf
   bool new_goal_is_received_ = false;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr goal_subscriber_ = nullptr;
   std::string arm_id_;
+  static constexpr double DeltaMotionMoved_ = 2e-6;
   const int num_joints = 7;
   Vector7d q_;
   Vector7d q_goal_;

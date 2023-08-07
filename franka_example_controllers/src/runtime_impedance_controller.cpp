@@ -83,6 +83,9 @@ controller_interface::return_type RuntimeImpedanceController::update(
     for (int i = 0; i < 7; ++i) {
       command_interfaces_[i].set_value(tau_d_calculated(i));
     }
+  } else if (finished && (q_ - q_goal_).array().abs().sum() > DeltaMotionMoved_) {
+    motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
+    start_time_ = this->get_node()->now();
   } else {
     for (auto& command_interface : command_interfaces_) {
       command_interface.set_value(0);
