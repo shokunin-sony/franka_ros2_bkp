@@ -39,6 +39,7 @@ add_library(
         src/model_example_controller.cpp
         src/move_to_start_example_controller.cpp
         src/runtime_position_controller.cpp
+        src/runtime_impedance_controller.cpp
         src/motion_generator.cpp
         src/speed_generator.cpp)
 target_include_directories(

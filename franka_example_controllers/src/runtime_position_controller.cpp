@@ -92,7 +92,7 @@ controller_interface::return_type RuntimePositionController::update(
 }
 
 CallbackReturn RuntimePositionController::on_init() {
-  q_goal_ << M_PI, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
+  q_goal_ << 0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
   try {
     auto_declare<std::string>("arm_id", "panda");
     auto_declare<std::vector<double>>("k_gains", {});

@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <franka_example_controllers/joint_velocity_example_controller.hpp>
-
-#include <cassert>
-#include <cmath>
-#include <exception>
+#include <franka_example_controllers/runtime_impedance_controller.hpp>
 
 #include <Eigen/Eigen>
+#include <cassert>
+#include <cmath>
 #include <controller_interface/controller_interface.hpp>
+#include <exception>
+#include <functional>
+#include <memory>
+#include <thread>
+
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 namespace franka_example_controllers {
 
 controller_interface::InterfaceConfiguration
-JointVelocityExampleController::command_interface_configuration() const {
+RuntimeImpedanceController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
@@ -35,7 +40,7 @@ JointVelocityExampleController::command_interface_configuration() const {
 }
 
 controller_interface::InterfaceConfiguration
-JointVelocityExampleController::state_interface_configuration() const {
+RuntimeImpedanceController::state_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   for (int i = 1; i <= num_joints; ++i) {
@@ -45,16 +50,31 @@ JointVelocityExampleController::state_interface_configuration() const {
   return config;
 }
 
-controller_interface::return_type JointVelocityExampleController::update(
+controller_interface::return_type RuntimeImpedanceController::update(
     const rclcpp::Time& /*time*/,
     const rclcpp::Duration& /*period*/) {
   updateJointStates();
+
+  if (new_goal_is_received_) {
+    RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
+    RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
+    RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
+
+    motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
+
+    start_time_ = this->get_node()->now();
+    new_goal_is_received_ = false;  // follow the current goal until a different goal is received
+  }
+  q_current_goal_ = q_goal_;
   auto trajectory_time = this->get_node()->now() - start_time_;
-  auto speed_generator_output = speed_generator_->getDesiredJointPositions(trajectory_time);
-  Vector7d q_desired = speed_generator_output.first;
+  RCLCPP_INFO(get_node()->get_logger(), "trajectory_time_ is: %f", trajectory_time.seconds());
+
+  auto motion_generator_output = motion_generator_->getDesiredJointPositions(trajectory_time);
+  Vector7d q_desired = motion_generator_output.first;
   RCLCPP_INFO(get_node()->get_logger(), "current desired position of joint '%d' is: '%f'", 1,
               q_desired[0]);
-  bool finished = speed_generator_output.second;
+
+  bool finished = motion_generator_output.second;
   if (not finished) {
     const double kAlpha = 0.99;
     dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
@@ -71,8 +91,8 @@ controller_interface::return_type JointVelocityExampleController::update(
   return controller_interface::return_type::OK;
 }
 
-CallbackReturn JointVelocityExampleController::on_init() {
-  q_vel_ << 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+CallbackReturn RuntimeImpedanceController::on_init() {
+  q_goal_ << 0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
   try {
     auto_declare<std::string>("arm_id", "panda");
     auto_declare<std::vector<double>>("k_gains", {});
@@ -84,7 +104,7 @@ CallbackReturn JointVelocityExampleController::on_init() {
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointVelocityExampleController::on_configure(
+CallbackReturn RuntimeImpedanceController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = get_node()->get_parameter("arm_id").as_string();
   auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
@@ -112,25 +132,47 @@ CallbackReturn JointVelocityExampleController::on_configure(
     k_gains_(i) = k_gains.at(i);
   }
   dq_filtered_.setZero();
+  goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
+      "/runtime_control/position_goal", rclcpp::SystemDefaultsQoS(),
+      [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
+        // if (!subscriber_is_active_) {
+        // RCLCPP_WARN(get_node()->get_logger(),
+        //             "Can't accept new commands. subscriber is inactive");
+        // return;
+        // }
+        auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
+        RCLCPP_INFO(get_node()->get_logger(), "goal received ");
+        joint_goal = msg;
+        RCLCPP_INFO(get_node()->get_logger(), "Received joint1 position: %f", msg->position[0]);
+        q_goal_ << joint_goal->position[0], joint_goal->position[1], joint_goal->position[2],
+            joint_goal->position[3], joint_goal->position[4], joint_goal->position[5],
+            joint_goal->position[6];
+        // RCLCPP_INFO(get_node()->get_logger(), "Received joint1 position: %f",
+        // joint_goal->position[0]);
+        if (q_goal_ != q_current_goal_) {
+          new_goal_is_received_ = true;
+          RCLCPP_INFO(get_node()->get_logger(), "goal changed from the previous one");
+        }
+      });
+
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointVelocityExampleController::on_activate(
+CallbackReturn RuntimeImpedanceController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
-  speed_generator_ = std::make_unique<SpeedGenerator>(0.1, q_, q_vel_, 2.0);
+  motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
   start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;
 }
 
-void JointVelocityExampleController::updateJointStates() {
+void RuntimeImpedanceController::updateJointStates() {
   for (auto i = 0; i < num_joints; ++i) {
     const auto& position_interface = state_interfaces_.at(2 * i);
     const auto& velocity_interface = state_interfaces_.at(2 * i + 1);
 
     assert(position_interface.get_interface_name() == "position");
     assert(velocity_interface.get_interface_name() == "velocity");
-
     // RCLCPP_INFO(get_node()->get_logger(), "Current position of joint %d is %f", i,
     //             position_interface.get_value());
     q_(i) = position_interface.get_value();
@@ -140,5 +182,6 @@ void JointVelocityExampleController::updateJointStates() {
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"
 // NOLINTNEXTLINE
-PLUGINLIB_EXPORT_CLASS(franka_example_controllers::JointVelocityExampleController,
+
+PLUGINLIB_EXPORT_CLASS(franka_example_controllers::RuntimeImpedanceController,
                        controller_interface::ControllerInterface)
