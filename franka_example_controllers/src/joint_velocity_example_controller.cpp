@@ -118,7 +118,7 @@ CallbackReturn JointVelocityExampleController::on_configure(
 CallbackReturn JointVelocityExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
-  speed_generator_ = std::make_unique<SpeedGenerator>(0.1, q_, q_vel_, 2.0);
+  speed_generator_ = std::make_unique<SpeedGenerator>(0.1, q_, q_vel_);
   start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;
 }

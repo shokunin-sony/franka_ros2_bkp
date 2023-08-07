@@ -28,17 +28,12 @@
  * @param speed_factor - The ratio of the max acceleration and velocities for joints
  * @param q_start - The start position of the robot
  * @param q_vel - Desired velocities for joints
- * @param duration_vel - the total duration of the velocity based motion
  */
-SpeedGenerator::SpeedGenerator(double speed_factor,
-                               const Vector7d& q_start,
-                               const Vector7d& q_vel,
-                               double duration_vel)
+SpeedGenerator::SpeedGenerator(double speed_factor, const Vector7d& q_start, const Vector7d& q_vel)
     : q_start_(q_start) {
   assert(speed_factor > 0);
   assert(speed_factor <= 1);
   dq_max_ *= speed_factor;
-  duration_vel_ = duration_vel;
   q_vel_ = q_vel;
   // assert(abs(q_vel.maxCoeff()) <= dq_max_);
   calculateSynchronizedValues();
@@ -47,24 +42,19 @@ SpeedGenerator::SpeedGenerator(double speed_factor,
 bool SpeedGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const {
   Vector7i sign_q_vel;
   sign_q_vel << q_vel_.cwiseSign().cast<int>();
-  Vector7d t_d = t_2_ - t_1_;
-  Vector7d delta_t_2 = t_f_ - t_2_;
   std::array<bool, kJoints> joint_motion_finished{};
 
+  // If V = m(1-cos(n*pi*t))
+  // set maximum a=0.5, then n=a/(2*m*pi)=1/(v*pi), m=v/2
+  // acceleration time is v*pi
   for (auto i = 0; i < kJoints; i++) {
-    if (t < t_1_[i]) {
-      // double omega[i] = q_vel_[i] / 2.0 * (1.0 - std::cos(2.0 * M_PI * t));
-      (*delta_q_d)[i] = q_vel_[i] / 2.0 * t - q_vel_[i] / 4.0 / M_PI * std::sin(2.0 * M_PI * t);
-    } else if (t >= t_1_[i] && t < t_2_[i]) {
+    if (t < t_1_[i])
+      // calculus of v/2(1-cos(t/v)) is v*t/2 - v*v/2*sin(t/v)
+      (*delta_q_d)[i] = q_vel_[i] * t / 2 - q_vel_[i] * q_vel_[i] * std::sin(t / q_vel_[i]);
+    else {
+      // v**2*pi/ 2 is the distance before t_1_
       (*delta_q_d)[i] =
-          q_vel_[i] / 2.0 * (1.0 - std::cos(2.0 * M_PI * t_1_[i])) + (t - t_1_[i]) * q_vel_[i];
-    } else if (t >= t_2_[i] && t < t_f_[i]) {
-      (*delta_q_d)[i] = (t_2_[i] - t_1_[i]) * q_vel_[i] +
-                        q_vel_[i] / 2.0 * (1.0 - std::cos(2.0 * M_PI * (t - t_d[i])));
-    } else {
-      (*delta_q_d)[i] = (t_2_[i] - t_1_[i]) * q_vel_[i] +
-                        q_vel_[i] / 2.0 * (1.0 - std::cos(2.0 * M_PI * (t_1_[i] + delta_t_2[i])));
-      joint_motion_finished.at(i) = true;
+          q_vel_[i] * (t - t_1_[i]) + q_vel_[i] * q_vel_[i] * 3.14159265358979323846 / 2;
     }
   }
   return std::all_of(joint_motion_finished.cbegin(), joint_motion_finished.cend(),
@@ -73,12 +63,9 @@ bool SpeedGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const
 
 void SpeedGenerator::calculateSynchronizedValues() {
   Vector7d delta_t_2 = Vector7d::Zero();
-
+  const double ddq_max = 0.5;
   for (auto i = 0; i < kJoints; i++) {
-    t_1_[i] = 0.5;
-    delta_t_2[i] = 0.5;
-    t_f_[i] = duration_vel_;
-    t_2_[i] = t_f_[i] - delta_t_2[i];
+    t_1_[i] = q_vel_[i] * 3.14159265358979323846;
   }
 }
 

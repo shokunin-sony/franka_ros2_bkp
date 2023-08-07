@@ -24,13 +24,6 @@ class GoalPublisher : public rclcpp::Node {
   void timer_callback() {
     auto message = std::make_shared<sensor_msgs::msg::JointState>();
     message->position.resize(7);
-    // message->position[0] = 0.0;
-    // message->position[1] = -3.14 / 4;
-    // message->position[2] = 0.0;
-    // message->position[3] = -3 * 3.14 / 4;
-    // message->position[4] = 0.0;
-    // message->position[5] = 3.14 / 2;
-    // message->position[6] = 3.14 / 4;
     for (int i = 0; i < 7; i++) {
       message->position[i] = goal_position_[i];
       RCLCPP_INFO(this->get_logger(), "Publishing the goal, jnt'%d''s position is : '%f'", i + 1,

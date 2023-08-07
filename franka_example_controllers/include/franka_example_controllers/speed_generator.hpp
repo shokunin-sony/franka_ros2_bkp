@@ -33,12 +33,8 @@ class SpeedGenerator {
    * @param[in] speed_factor General speed factor in range (0, 1].
    * @param[in] q_start Start joint positions.
    * @param[in] q_vel Target joint velocities.
-   * @param[in] duration_vel target motion duration.
    */
-  SpeedGenerator(double speed_factor,
-                 const Vector7d& q_start,
-                 const Vector7d& q_vel,
-                 double duration_vel);
+  SpeedGenerator(double speed_factor, const Vector7d& q_start, const Vector7d& q_vel);
 
   /**
    * Sends joint position calculations
