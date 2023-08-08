@@ -21,6 +21,7 @@
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
 
+#include "sensor_msgs/msg/joint_state.hpp"
 #include "speed_generator.hpp"
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -40,10 +41,13 @@ class JointVelocityExampleController : public controller_interface::ControllerIn
   CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
 
  private:
+  bool new_goal_is_received_ = false;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr goal_subscriber_ = nullptr;
   std::string arm_id_;
   const int num_joints = 7;
   Vector7d q_;
   Vector7d q_vel_;
+  Vector7d q_current_vel_;
   Vector7d dq_;
   Vector7d dq_filtered_;
   Vector7d k_gains_;

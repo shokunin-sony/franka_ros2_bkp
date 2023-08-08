@@ -71,10 +71,13 @@ pluginlib_export_plugin_description_file(
         controller_interface franka_example_controllers.xml)
 
 add_executable(goal_pub src/simple_goal_publisher.cpp)
+add_executable(velocity_goal_pub src/simple_velocity_goal_publisher.cpp)
 ament_target_dependencies(goal_pub rclcpp sensor_msgs std_msgs)
+ament_target_dependencies(velocity_goal_pub rclcpp sensor_msgs std_msgs)
 
 install(TARGETS
   goal_pub
+  velocity_goal_pub
   DESTINATION lib/${PROJECT_NAME})
 
 install(
