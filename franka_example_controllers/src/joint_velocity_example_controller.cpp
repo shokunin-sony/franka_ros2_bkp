@@ -50,6 +50,9 @@ controller_interface::return_type JointVelocityExampleController::update(
     const rclcpp::Duration& /*period*/) {
   updateJointStates();
   auto trajectory_time = this->get_node()->now() - start_time_;
+
+  RCLCPP_INFO(get_node()->get_logger(), "trajectory_time_ is: %f", trajectory_time.seconds());
+
   auto speed_generator_output = speed_generator_->getDesiredJointPositions(trajectory_time);
   Vector7d q_desired = speed_generator_output.first;
   RCLCPP_INFO(get_node()->get_logger(), "current desired position of joint '%d' is: '%f'", 1,
@@ -131,8 +134,8 @@ void JointVelocityExampleController::updateJointStates() {
     assert(position_interface.get_interface_name() == "position");
     assert(velocity_interface.get_interface_name() == "velocity");
 
-    // RCLCPP_INFO(get_node()->get_logger(), "Current position of joint %d is %f", i,
-    //             position_interface.get_value());
+    RCLCPP_INFO(get_node()->get_logger(), "Current position of joint %d is %f", i,
+                position_interface.get_value());
     q_(i) = position_interface.get_value();
     dq_(i) = velocity_interface.get_value();
   }

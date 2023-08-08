@@ -50,7 +50,7 @@ bool SpeedGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const
   for (auto i = 0; i < kJoints; i++) {
     if (t < t_1_[i])
       // calculus of v/2(1-cos(t/v)) is v*t/2 - v*v/2*sin(t/v)
-      (*delta_q_d)[i] = q_vel_[i] * t / 2 - q_vel_[i] * q_vel_[i] * std::sin(t / q_vel_[i]);
+      (*delta_q_d)[i] = q_vel_[i] * t / 2 - q_vel_[i] * q_vel_[i] / 2.0 * std::sin(t / q_vel_[i]);
     else {
       // v**2*pi/ 2 is the distance before t_1_
       (*delta_q_d)[i] =
