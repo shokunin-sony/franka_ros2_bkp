@@ -62,7 +62,6 @@ bool SpeedGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const
 }
 
 void SpeedGenerator::calculateSynchronizedValues() {
-  Vector7d delta_t_2 = Vector7d::Zero();
   const double ddq_max = 0.5;
   for (auto i = 0; i < kJoints; i++) {
     t_1_[i] = q_vel_[i] * 3.14159265358979323846;

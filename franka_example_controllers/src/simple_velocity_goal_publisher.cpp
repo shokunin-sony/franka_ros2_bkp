@@ -17,8 +17,7 @@ class VelocityGoalPublisher : public rclcpp::Node {
     get_parameter("goal_velocity", goal_velocity_);
     publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>("/runtime_control/goal_velocity", 1);
-    timer_ =
-        this->create_wall_timer(500ms, std::bind(&VelocityGoalPublisher::timer_callback, this));
+    timer_ = this->create_wall_timer(2ms, std::bind(&VelocityGoalPublisher::timer_callback, this));
   }
 
  private:
@@ -27,8 +26,8 @@ class VelocityGoalPublisher : public rclcpp::Node {
     message->velocity.resize(7);
     for (int i = 0; i < 7; i++) {
       message->velocity[i] = goal_velocity_[i];
-      RCLCPP_INFO(this->get_logger(), "Publishing the goal, jnt'%d''s velocity goal is : '%f'",
-                  i + 1, message->velocity[i]);
+      //   RCLCPP_INFO(this->get_logger(), "Publishing the goal, jnt'%d''s velocity goal is : '%f'",
+      //               i + 1, message->velocity[i]);
     }
     publisher_->publish(*message);
   }

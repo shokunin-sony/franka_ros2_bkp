@@ -17,7 +17,7 @@ class GoalPublisher : public rclcpp::Node {
     get_parameter("goal_position", goal_position_);
     publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>("/runtime_control/position_goal", 1);
-    timer_ = this->create_wall_timer(500ms, std::bind(&GoalPublisher::timer_callback, this));
+    timer_ = this->create_wall_timer(2ms, std::bind(&GoalPublisher::timer_callback, this));
   }
 
  private:
@@ -26,8 +26,8 @@ class GoalPublisher : public rclcpp::Node {
     message->position.resize(7);
     for (int i = 0; i < 7; i++) {
       message->position[i] = goal_position_[i];
-      RCLCPP_INFO(this->get_logger(), "Publishing the goal, jnt'%d''s position is : '%f'", i + 1,
-                  message->position[i]);
+      // RCLCPP_INFO(this->get_logger(), "Publishing the goal, jnt'%d''s position is : '%f'", i + 1,
+      //             message->position[i]);
     }
     publisher_->publish(*message);
   }
