@@ -20,6 +20,9 @@ controller_manager:
     runtime_impedance_controller:
       type: franka_example_controllers/RuntimeImpedanceController
 
+    robot_interface_general_controller:
+      type: franka_example_controllers/RobotInterfaceGeneralController
+
     model_example_controller:
       type: franka_example_controllers/ModelExampleController
 
@@ -141,6 +144,25 @@ joint_velocity_example_controller:
       - 10.0
       - 5.
 runtime_position_controller:
+  ros__parameters:
+    arm_id: panda
+    k_gains:
+      - 600.0
+      - 600.0
+      - 600.0
+      - 600.0
+      - 250.0
+      - 150.0
+      - 50.0
+    d_gains:
+      - 30.0
+      - 30.0
+      - 30.0
+      - 30.0
+      - 10.0
+      - 10.0
+      - 5.
+robot_interface_general_controller:
   ros__parameters:
     arm_id: panda
     k_gains:
