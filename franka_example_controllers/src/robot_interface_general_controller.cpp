@@ -60,6 +60,7 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
   updateJointStates();
 
   if (new_goal_is_received_) {
+    start_execution_ = true;
     RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
     RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
     switch (control_mode_) {
@@ -94,35 +95,37 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
     new_goal_is_received_ = false;
   }
 
-  // q_current_goal_ = q_goal_;
-  auto trajectory_time = this->get_node()->now() - start_time_;
-  if (control_mode_ != VELOCITY_CONTROL) {
-    generator_output_ = motion_generator_->getDesiredJointPositions(trajectory_time);
-  } else {
-    generator_output_ = speed_generator_->getDesiredJointPositions(trajectory_time);
-  }
-  Vector7d q_desired = generator_output_.first;
-  bool finished = generator_output_.second;
+  if (start_execution_) {
+    // q_current_goal_ = q_goal_;
+    auto trajectory_time = this->get_node()->now() - start_time_;
+    if (control_mode_ != VELOCITY_CONTROL) {
+      generator_output_ = motion_generator_->getDesiredJointPositions(trajectory_time);
+    } else {
+      generator_output_ = speed_generator_->getDesiredJointPositions(trajectory_time);
+    }
+    Vector7d q_desired = generator_output_.first;
+    bool finished = generator_output_.second;
 
-  if (not finished) {
-    const double kAlpha = 0.99;
-    dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
-    Vector7d tau_d_calculated =
-        k_gains_.cwiseProduct(q_desired - q_) + d_gains_.cwiseProduct(-dq_filtered_);
-    for (int i = 0; i < 7; ++i) {
-      command_interfaces_[i].set_value(tau_d_calculated(i));
-    }
-  } else if (control_mode_ != VELOCITY_CONTROL) {
-    const double kAlpha = 0.99;
-    dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
-    Vector7d tau_d_calculated =
-        k_gains_.cwiseProduct(q_goal_ - q_) + d_gains_.cwiseProduct(-dq_filtered_);
-    for (int i = 0; i < 7; ++i) {
-      command_interfaces_[i].set_value(tau_d_calculated(i));
-    }
-  } else {
-    for (auto& command_interface : command_interfaces_) {
-      command_interface.set_value(0);
+    if (not finished) {
+      const double kAlpha = 0.99;
+      dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
+      Vector7d tau_d_calculated =
+          k_gains_.cwiseProduct(q_desired - q_) + d_gains_.cwiseProduct(-dq_filtered_);
+      for (int i = 0; i < 7; ++i) {
+        command_interfaces_[i].set_value(tau_d_calculated(i));
+      }
+    } else if (control_mode_ != VELOCITY_CONTROL) {
+      const double kAlpha = 0.99;
+      dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
+      Vector7d tau_d_calculated =
+          k_gains_.cwiseProduct(q_goal_ - q_) + d_gains_.cwiseProduct(-dq_filtered_);
+      for (int i = 0; i < 7; ++i) {
+        command_interfaces_[i].set_value(tau_d_calculated(i));
+      }
+    } else {
+      for (auto& command_interface : command_interfaces_) {
+        command_interface.set_value(0);
+      }
     }
   }
   return controller_interface::return_type::OK;
@@ -215,8 +218,8 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
 CallbackReturn RobotInterfaceGeneralController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
-  motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-  start_time_ = this->get_node()->now();
+  // motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
+  // start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;
 }
 
