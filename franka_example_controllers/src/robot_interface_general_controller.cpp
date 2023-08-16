@@ -110,7 +110,7 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
     for (int i = 0; i < 7; ++i) {
       command_interfaces_[i].set_value(tau_d_calculated(i));
     }
-  } else if (control_mode_ == IMPEDANCE_CONTROL) {
+  } else if (control_mode_ != VELOCITY_CONTROL) {
     const double kAlpha = 0.99;
     dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
     Vector7d tau_d_calculated =
