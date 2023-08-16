@@ -83,8 +83,8 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
         RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
         motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
         for (int i = 0; i < num_joints; ++i) {
-          d_gains_(i) = get_node()->get_parameter("d_gains").as_double_array().at(i);
-          k_gains_(i) = get_node()->get_parameter("k_gains").as_double_array().at(i);
+          d_gains_(i) = get_node()->get_parameter("impedance_d_gains").as_double_array().at(i);
+          k_gains_(i) = get_node()->get_parameter("impedance_k_gains").as_double_array().at(i);
         }
         break;
       default:
