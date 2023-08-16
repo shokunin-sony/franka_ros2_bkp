@@ -181,3 +181,19 @@ robot_interface_general_controller:
       - 10.0
       - 10.0
       - 5.
+    impedance_k_gains:
+      - 24.0
+      - 24.0
+      - 24.0
+      - 24.0
+      - 10.0
+      - 6.0
+      - 2.0
+    impedance_d_gains:
+      - 2.0
+      - 2.0
+      - 2.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 0.5

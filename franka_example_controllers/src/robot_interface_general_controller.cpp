@@ -60,39 +60,47 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
   updateJointStates();
 
   if (new_goal_is_received_) {
+    RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
+    RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
     switch (control_mode_) {
       case POSITION_CONTROL:
-        RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
         RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
-        RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
         motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-        start_time_ = this->get_node()->now();
-        new_goal_is_received_ = false;
+        auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
+        auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
+        for (int i = 0; i < num_joints; ++i) {
+          d_gains_(i) = d_gains.at(i);
+          k_gains_(i) = k_gains.at(i);
+        }
         break;
       case VELOCITY_CONTROL:
-        RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
         RCLCPP_INFO(get_node()->get_logger(), "q_vel is: '%f'", q_vel_[0]);
-        RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
         speed_generator_ = std::make_unique<SpeedGenerator>(0.1, q_, q_vel_);
-        start_time_ = this->get_node()->now();
-        new_goal_is_received_ = false;
+        auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
+        auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
+        for (int i = 0; i < num_joints; ++i) {
+          d_gains_(i) = d_gains.at(i);
+          k_gains_(i) = k_gains.at(i);
+        }
         break;
       case IMPEDANCE_CONTROL:
-        RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
         RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
-        RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
         motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-        start_time_ = this->get_node()->now();
-        new_goal_is_received_ = false;
+        auto k_gains = get_node()->get_parameter("impedance_k_gains").as_double_array();
+        auto d_gains = get_node()->get_parameter("impedance_d_gains").as_double_array();
+        for (int i = 0; i < num_joints; ++i) {
+          d_gains_(i) = d_gains.at(i);
+          k_gains_(i) = k_gains.at(i);
+        }
         break;
       default:
         break;
     }
-    // follow the current goal until a different goal is received
+    start_time_ = this->get_node()->now();
+    new_goal_is_received_ = false;
   }
 
-  //  q_current_goal_ = q_goal_;
-
+  // q_current_goal_ = q_goal_;
   auto trajectory_time = this->get_node()->now() - start_time_;
   if (control_mode_ != VELOCITY_CONTROL) {
     generator_output_ = motion_generator_->getDesiredJointPositions(trajectory_time);
@@ -178,7 +186,6 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
             joint_goal->position[3], joint_goal->position[4], joint_goal->position[5],
             joint_goal->position[6];
         new_goal_is_received_ = true;
-        RCLCPP_INFO(get_node()->get_logger(), "received new command");
         control_mode_ = POSITION_CONTROL;
       });
   velocity_goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
@@ -192,7 +199,6 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
             joint_goal->velocity[3], joint_goal->velocity[4], joint_goal->velocity[5],
             joint_goal->velocity[6];
         new_goal_is_received_ = true;
-        RCLCPP_INFO(get_node()->get_logger(), "received new command");
         control_mode_ = VELOCITY_CONTROL;
       });
   impedance_goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
@@ -206,7 +212,6 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
             joint_goal->position[3], joint_goal->position[4], joint_goal->position[5],
             joint_goal->position[6];
         new_goal_is_received_ = true;
-        RCLCPP_INFO(get_node()->get_logger(), "received new command");
         control_mode_ = IMPEDANCE_CONTROL;
       });
 
