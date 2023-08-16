@@ -66,8 +66,8 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
       case POSITION_CONTROL:
         RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
         motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-        auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
-        auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
+        k_gains = get_node()->get_parameter("k_gains").as_double_array();
+        d_gains = get_node()->get_parameter("d_gains").as_double_array();
         for (int i = 0; i < num_joints; ++i) {
           d_gains_(i) = d_gains.at(i);
           k_gains_(i) = k_gains.at(i);
@@ -76,8 +76,8 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
       case VELOCITY_CONTROL:
         RCLCPP_INFO(get_node()->get_logger(), "q_vel is: '%f'", q_vel_[0]);
         speed_generator_ = std::make_unique<SpeedGenerator>(0.1, q_, q_vel_);
-        auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
-        auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
+        k_gains = get_node()->get_parameter("k_gains").as_double_array();
+        d_gains = get_node()->get_parameter("d_gains").as_double_array();
         for (int i = 0; i < num_joints; ++i) {
           d_gains_(i) = d_gains.at(i);
           k_gains_(i) = k_gains.at(i);
@@ -86,8 +86,8 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
       case IMPEDANCE_CONTROL:
         RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
         motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-        auto k_gains = get_node()->get_parameter("impedance_k_gains").as_double_array();
-        auto d_gains = get_node()->get_parameter("impedance_d_gains").as_double_array();
+        k_gains = get_node()->get_parameter("impedance_k_gains").as_double_array();
+        d_gains = get_node()->get_parameter("impedance_d_gains").as_double_array();
         for (int i = 0; i < num_joints; ++i) {
           d_gains_(i) = d_gains.at(i);
           k_gains_(i) = k_gains.at(i);
