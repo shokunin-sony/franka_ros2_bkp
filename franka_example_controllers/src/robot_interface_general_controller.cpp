@@ -127,6 +127,14 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
         command_interface.set_value(0);
       }
     }
+  } else {
+    const double kAlpha = 0.99;
+    dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
+    Vector7d tau_d_calculated =
+        k_gains_.cwiseProduct(q_start_ - q_) + d_gains_.cwiseProduct(-dq_filtered_);
+    for (int i = 0; i < 7; ++i) {
+      command_interfaces_[i].set_value(tau_d_calculated(i));
+    }
   }
   return controller_interface::return_type::OK;
 }
@@ -218,6 +226,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
 CallbackReturn RobotInterfaceGeneralController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
+  q_start_ = q_;
   // motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
   // start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;

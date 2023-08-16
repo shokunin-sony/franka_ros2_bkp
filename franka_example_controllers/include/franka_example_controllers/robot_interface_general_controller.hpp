@@ -37,6 +37,7 @@ class RobotInterfaceGeneralController : public controller_interface::ControllerI
   const int num_joints = 7;
   Vector7d q_;
   Vector7d q_goal_;
+  Vector7d q_start_;
   Vector7d q_vel_;
   Vector7d q_current_goal_;
   Vector7d dq_;
