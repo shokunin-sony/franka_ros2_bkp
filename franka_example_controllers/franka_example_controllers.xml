@@ -23,4 +23,10 @@
             The franka model example controller evaluates and prints the dynamic model of Franka Emika Robots.
         </description>
     </class>
+    <class name="franka_example_controllers/RobotInterfaceGeneralController"
+           type="franka_example_controllers::RobotInterfaceGeneralController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            For robot_interface franka_ros2 controller.
+        </description>
+    </class>
 </library>
