@@ -36,11 +36,8 @@ add_library(
         src/gravity_compensation_example_controller.cpp
         src/joint_impedance_example_controller.cpp
         src/robot_interface_general_controller.cpp
-        src/joint_velocity_example_controller.cpp
         src/model_example_controller.cpp
         src/move_to_start_example_controller.cpp
-        src/runtime_position_controller.cpp
-        src/runtime_impedance_controller.cpp
         src/motion_generator.cpp
         src/speed_generator.cpp)
 target_include_directories(
@@ -70,16 +67,6 @@ target_link_libraries(${PROJECT_NAME} franka_example_controllers_parameters)
 
 pluginlib_export_plugin_description_file(
         controller_interface franka_example_controllers.xml)
-
-add_executable(goal_pub src/simple_goal_publisher.cpp)
-add_executable(velocity_goal_pub src/simple_velocity_goal_publisher.cpp)
-ament_target_dependencies(goal_pub rclcpp sensor_msgs std_msgs)
-ament_target_dependencies(velocity_goal_pub rclcpp sensor_msgs std_msgs)
-
-install(TARGETS
-  goal_pub
-  velocity_goal_pub
-  DESTINATION lib/${PROJECT_NAME})
 
 install(
   DIRECTORY launch
