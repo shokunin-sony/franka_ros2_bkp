@@ -17,28 +17,10 @@
             The move to start example controller moves the robot into default pose.
         </description>
     </class>
-    <class name="franka_example_controllers/JointVelocityExampleController"
-           type="franka_example_controllers::JointVelocityExampleController" base_class_type="controller_interface::ControllerInterface">
-        <description>
-            The joint velocity example controller moves the robot joints with specific velocities.
-        </description>
-    </class>
     <class name="franka_example_controllers/ModelExampleController"
            type="franka_example_controllers::ModelExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>
             The franka model example controller evaluates and prints the dynamic model of Franka Emika Robots.
-        </description>
-    </class>
-    <class name="franka_example_controllers/RuntimePositionController"
-           type="franka_example_controllers::RuntimePositionController" base_class_type="controller_interface::ControllerInterface">
-        <description>
-            The runtime position controller can move the robot to the desired pose in runtime.
-        </description>
-    </class>
-    <class name="franka_example_controllers/RuntimeImpedanceController"
-           type="franka_example_controllers::RuntimeImpedanceController" base_class_type="controller_interface::ControllerInterface">
-        <description>
-            The runtime impedance controller can move the robot to the desired pose in runtime and also in impedance way.
         </description>
     </class>
     <class name="franka_example_controllers/RobotInterfaceGeneralController"

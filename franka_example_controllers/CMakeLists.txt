@@ -67,12 +67,7 @@ target_link_libraries(${PROJECT_NAME} franka_example_controllers_parameters)
 
 pluginlib_export_plugin_description_file(
         controller_interface franka_example_controllers.xml)
-
-install(
-  DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME}
-)
-      
+   
 install(
         TARGETS
         ${PROJECT_NAME}
