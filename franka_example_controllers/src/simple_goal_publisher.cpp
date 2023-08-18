@@ -26,8 +26,6 @@ class GoalPublisher : public rclcpp::Node {
     message->position.resize(7);
     for (int i = 0; i < 7; i++) {
       message->position[i] = goal_position_[i];
-      // RCLCPP_INFO(this->get_logger(), "Publishing the goal, jnt'%d''s position is : '%f'", i + 1,
-      //             message->position[i]);
     }
     publisher_->publish(*message);
   }

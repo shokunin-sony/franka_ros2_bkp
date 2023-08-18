@@ -51,21 +51,15 @@ controller_interface::return_type JointVelocityExampleController::update(
   updateJointStates();
   if (new_goal_is_received_) {
     RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
-    RCLCPP_INFO(get_node()->get_logger(), "desired velocity for jnt1 is: '%f'", q_vel_[0]);
-    RCLCPP_INFO(get_node()->get_logger(), "q_ for jnt1 is: '%f'", q_[0]);
     speed_generator_ = std::make_unique<SpeedGenerator>(0.1, q_, q_vel_);
     start_time_ = this->get_node()->now();
     new_goal_is_received_ = false;
   }
   q_current_vel_ = q_vel_;
   auto trajectory_time = this->get_node()->now() - start_time_;
-
-  // RCLCPP_INFO(get_node()->get_logger(), "trajectory_time_ is: %f", trajectory_time.seconds());
-
   auto speed_generator_output = speed_generator_->getDesiredJointPositions(trajectory_time);
   Vector7d q_desired = speed_generator_output.first;
-  // RCLCPP_INFO(get_node()->get_logger(), "current desired position of joint '%d' is: '%f'", 1,
-  //             q_desired[0]);
+
   bool finished = speed_generator_output.second;
   if (not finished) {
     const double kAlpha = 0.99;
@@ -127,20 +121,11 @@ CallbackReturn JointVelocityExampleController::on_configure(
   goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
       "/runtime_control/goal_velocity", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
-        // if (!subscriber_is_active_) {
-        // RCLCPP_WARN(get_node()->get_logger(),
-        //             "Can't accept new commands. subscriber is inactive");
-        // return;
-        // }
         auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
-        RCLCPP_INFO(get_node()->get_logger(), "goal received ");
         joint_goal = msg;
-        RCLCPP_INFO(get_node()->get_logger(), "Received joint1 velocity: %f", msg->velocity[0]);
         q_vel_ << joint_goal->velocity[0], joint_goal->velocity[1], joint_goal->velocity[2],
             joint_goal->velocity[3], joint_goal->velocity[4], joint_goal->velocity[5],
             joint_goal->velocity[6];
-        // RCLCPP_INFO(get_node()->get_logger(), "Received joint1 position: %f",
-        // joint_goal->position[0]);
         if (q_vel_ != q_current_vel_) {
           new_goal_is_received_ = true;
           RCLCPP_INFO(get_node()->get_logger(), "goal changed from the previous one");
@@ -166,8 +151,6 @@ void JointVelocityExampleController::updateJointStates() {
     assert(position_interface.get_interface_name() == "position");
     assert(velocity_interface.get_interface_name() == "velocity");
 
-    // RCLCPP_INFO(get_node()->get_logger(), "Current position of joint %d is %f", i,
-    //             position_interface.get_value());
     q_(i) = position_interface.get_value();
     dq_(i) = velocity_interface.get_value();
   }

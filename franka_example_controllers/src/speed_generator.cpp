@@ -44,8 +44,7 @@ bool SpeedGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const
   sign_q_vel << q_vel_.cwiseSign().cast<int>();
   std::array<bool, kJoints> joint_motion_finished{};
 
-  // If V = m(1-cos(n*pi*t))
-  // set maximum a=0.5, then n=a/(2*m*pi)=1/(v*pi), m=v/2
+  // V = m(1-cos(n*pi*t))
   // acceleration time is v*pi
   for (auto i = 0; i < kJoints; i++) {
     if (t < t_1_[i])
@@ -64,6 +63,7 @@ bool SpeedGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const
 void SpeedGenerator::calculateSynchronizedValues() {
   const double ddq_max = 0.5;
   for (auto i = 0; i < kJoints; i++) {
+    // v*pi is the duration of acceleration stage
     t_1_[i] = std::abs(q_vel_[i]) * 3.14159265358979323846;
   }
 }

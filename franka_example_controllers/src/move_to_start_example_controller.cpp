@@ -62,10 +62,6 @@ controller_interface::return_type MoveToStartExampleController::update(
       command_interfaces_[i].set_value(tau_d_calculated(i));
     }
   } else {
-    // for (auto& command_interface : command_interfaces_) {
-    //   command_interface.set_value(0);
-    // }
-    // this->get_node()->set_parameter({"process_finished", true});
     const double kAlpha = 0.99;
     dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
     Vector7d tau_d_calculated =

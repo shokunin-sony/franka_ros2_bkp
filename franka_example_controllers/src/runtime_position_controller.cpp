@@ -57,13 +57,11 @@ controller_interface::return_type RuntimePositionController::update(
 
   if (new_goal_is_received_) {
     RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
-    RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
-    RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
 
     motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-
     start_time_ = this->get_node()->now();
-    new_goal_is_received_ = false;  // follow the current goal until a different goal is received
+    // follow the current goal until a different goal is received
+    new_goal_is_received_ = false;
   }
   q_current_goal_ = q_goal_;
   auto trajectory_time = this->get_node()->now() - start_time_;
@@ -83,10 +81,7 @@ controller_interface::return_type RuntimePositionController::update(
     for (int i = 0; i < 7; ++i) {
       command_interfaces_[i].set_value(tau_d_calculated(i));
     }
-  } else {
-    // for (auto& command_interface : command_interfaces_) {
-    //   command_interface.set_value(0);
-    // }
+  } else {  // Keep the last desired pose when motion is finished
     const double kAlpha = 0.99;
     dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
     Vector7d tau_d_calculated =
@@ -142,20 +137,11 @@ CallbackReturn RuntimePositionController::on_configure(
   goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
       "/runtime_control/position_goal", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
-        // if (!subscriber_is_active_) {
-        // RCLCPP_WARN(get_node()->get_logger(),
-        //             "Can't accept new commands. subscriber is inactive");
-        // return;
-        // }
         auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
-        RCLCPP_INFO(get_node()->get_logger(), "goal received ");
         joint_goal = msg;
-        RCLCPP_INFO(get_node()->get_logger(), "Received joint1 position: %f", msg->position[0]);
         q_goal_ << joint_goal->position[0], joint_goal->position[1], joint_goal->position[2],
             joint_goal->position[3], joint_goal->position[4], joint_goal->position[5],
             joint_goal->position[6];
-        // RCLCPP_INFO(get_node()->get_logger(), "Received joint1 position: %f",
-        // joint_goal->position[0]);
         if (q_goal_ != q_current_goal_) {
           new_goal_is_received_ = true;
           RCLCPP_INFO(get_node()->get_logger(), "goal changed from the previous one");
@@ -180,8 +166,7 @@ void RuntimePositionController::updateJointStates() {
 
     assert(position_interface.get_interface_name() == "position");
     assert(velocity_interface.get_interface_name() == "velocity");
-    // RCLCPP_INFO(get_node()->get_logger(), "Current position of joint %d is %f", i,
-    //             position_interface.get_value());
+
     q_(i) = position_interface.get_value();
     dq_(i) = velocity_interface.get_value();
   }

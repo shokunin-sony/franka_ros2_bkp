@@ -62,7 +62,6 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
   if (new_goal_is_received_) {
     start_execution_ = true;
     RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
-    RCLCPP_INFO(get_node()->get_logger(), "q_ is: '%f'", q_[0]);
     switch (control_mode_) {
       case POSITION_CONTROL:
         RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
@@ -96,7 +95,6 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
   }
 
   if (start_execution_) {
-    // q_current_goal_ = q_goal_;
     auto trajectory_time = this->get_node()->now() - start_time_;
     if (control_mode_ != VELOCITY_CONTROL) {
       generator_output_ = motion_generator_->getDesiredJointPositions(trajectory_time);
@@ -184,9 +182,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
       "/runtime_control/position_goal", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
         auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
-        RCLCPP_INFO(get_node()->get_logger(), "goal received ");
         joint_goal = msg;
-        RCLCPP_INFO(get_node()->get_logger(), "Received joint1 position: %f", msg->position[0]);
         q_goal_ << joint_goal->position[0], joint_goal->position[1], joint_goal->position[2],
             joint_goal->position[3], joint_goal->position[4], joint_goal->position[5],
             joint_goal->position[6];
@@ -197,9 +193,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
       "/runtime_control/goal_velocity", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
         auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
-        RCLCPP_INFO(get_node()->get_logger(), "goal received ");
         joint_goal = msg;
-        RCLCPP_INFO(get_node()->get_logger(), "Received joint1 velocity: %f", msg->velocity[0]);
         q_vel_ << joint_goal->velocity[0], joint_goal->velocity[1], joint_goal->velocity[2],
             joint_goal->velocity[3], joint_goal->velocity[4], joint_goal->velocity[5],
             joint_goal->velocity[6];
@@ -210,9 +204,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
       "/runtime_control/impedance_position_goal", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
         auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
-        RCLCPP_INFO(get_node()->get_logger(), "goal received ");
         joint_goal = msg;
-        RCLCPP_INFO(get_node()->get_logger(), "Received joint1 position: %f", msg->position[0]);
         q_goal_ << joint_goal->position[0], joint_goal->position[1], joint_goal->position[2],
             joint_goal->position[3], joint_goal->position[4], joint_goal->position[5],
             joint_goal->position[6];
@@ -227,8 +219,6 @@ CallbackReturn RobotInterfaceGeneralController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
   q_start_ = q_;
-  // motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-  // start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;
 }
 
@@ -239,8 +229,6 @@ void RobotInterfaceGeneralController::updateJointStates() {
 
     assert(position_interface.get_interface_name() == "position");
     assert(velocity_interface.get_interface_name() == "velocity");
-    // RCLCPP_INFO(get_node()->get_logger(), "Current position of joint %d is %f", i,
-    //             position_interface.get_value());
     q_(i) = position_interface.get_value();
     dq_(i) = velocity_interface.get_value();
   }

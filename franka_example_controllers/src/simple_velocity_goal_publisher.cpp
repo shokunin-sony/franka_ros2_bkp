@@ -26,8 +26,6 @@ class VelocityGoalPublisher : public rclcpp::Node {
     message->velocity.resize(7);
     for (int i = 0; i < 7; i++) {
       message->velocity[i] = goal_velocity_[i];
-      //   RCLCPP_INFO(this->get_logger(), "Publishing the goal, jnt'%d''s velocity goal is : '%f'",
-      //               i + 1, message->velocity[i]);
     }
     publisher_->publish(*message);
   }
