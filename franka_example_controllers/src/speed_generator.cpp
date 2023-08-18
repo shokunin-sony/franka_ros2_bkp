@@ -54,7 +54,7 @@ bool SpeedGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const
     else {
       // v**2*pi/ 2 is the distance before t_1_
       (*delta_q_d)[i] =
-          q_vel_[i] * (t - t_1_[i]) + q_vel_[i] * q_vel_[i] * 3.14159265358979323846 / 2;
+          q_vel_[i] * (t - t_1_[i]) + q_vel_[i] * std::abs(q_vel_[i]) * 3.14159265358979323846 / 2;
     }
   }
   return std::all_of(joint_motion_finished.cbegin(), joint_motion_finished.cend(),
@@ -64,7 +64,7 @@ bool SpeedGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const
 void SpeedGenerator::calculateSynchronizedValues() {
   const double ddq_max = 0.5;
   for (auto i = 0; i < kJoints; i++) {
-    t_1_[i] = q_vel_[i] * 3.14159265358979323846;
+    t_1_[i] = std::abs(q_vel_[i]) * 3.14159265358979323846;
   }
 }
 
