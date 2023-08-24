@@ -179,7 +179,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
   }
   dq_filtered_.setZero();
   goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
-      "/runtime_control/position_goal", rclcpp::SystemDefaultsQoS(),
+      "/runtime_control/joint_position_goal", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
         auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
         joint_goal = msg;
@@ -190,7 +190,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
         control_mode_ = POSITION_CONTROL;
       });
   velocity_goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
-      "/runtime_control/goal_velocity", rclcpp::SystemDefaultsQoS(),
+      "/runtime_control/joint_velocity_goal", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
         auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
         joint_goal = msg;
@@ -201,7 +201,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
         control_mode_ = VELOCITY_CONTROL;
       });
   impedance_goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
-      "/runtime_control/impedance_position_goal", rclcpp::SystemDefaultsQoS(),
+      "/runtime_control/joint_impedance_position_goal", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
         auto joint_goal = std::shared_ptr<sensor_msgs::msg::JointState>();
         joint_goal = msg;
