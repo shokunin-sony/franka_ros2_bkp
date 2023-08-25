@@ -1,15 +1,16 @@
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include <Eigen/Eigen>
 #include <controller_interface/controller_interface.hpp>
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <stack>
+#include <string>
 
 #include "motion_generator.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "speed_generator.hpp"
+#include "std_msgs/msg/string.hpp"
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
@@ -33,6 +34,8 @@ class RobotInterfaceGeneralController : public controller_interface::ControllerI
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr velocity_goal_subscriber_ = nullptr;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr impedance_goal_subscriber_ =
       nullptr;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr dynamic_control_subscriber_ = nullptr;
+
   std::string arm_id_;
   const int num_joints = 7;
   Vector7d q_;
@@ -44,7 +47,11 @@ class RobotInterfaceGeneralController : public controller_interface::ControllerI
   Vector7d dq_filtered_;
   Vector7d k_gains_;
   Vector7d d_gains_;
+  std::stack<Vector7d> q_goal_stack_;
+  std::stack<Vector7d> q_vel_stack_;
+  std::stack<int> motion_mode_stack_;
 
+  bool dynamic_control_ = true;
   int control_mode_ = 0;  // set default control mode to be position control
   rclcpp::Time start_time_;
   std::unique_ptr<MotionGenerator> motion_generator_;
