@@ -63,9 +63,9 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
   if (new_goal_is_received_) {
     start_execution_ = true;
 
-    if (dynamic_control_ == false && not generator_output_.second) {
+    if (not finished_) {
       RCLCPP_INFO(get_node()->get_logger(),
-                  "received new goal! Will start after current goal reached.");
+                  "new goal will be executed after current goal reached.");
       // if (control_mode_ = 0 || control_mode_ == 2)
       //   q_goal_stack_.push(q_goal_);
       // else
@@ -119,10 +119,10 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
       generator_output_ = speed_generator_->getDesiredJointPositions(trajectory_time);
     }
     Vector7d q_desired = generator_output_.first;
-    bool finished = generator_output_.second;
+    finished_ = generator_output_.second;
 
     // send computed torques to joints
-    if (not finished) {
+    if (not finished_) {
       const double kAlpha = 0.99;
       dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
       Vector7d tau_d_calculated =

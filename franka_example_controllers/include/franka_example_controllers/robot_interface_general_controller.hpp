@@ -52,6 +52,7 @@ class RobotInterfaceGeneralController : public controller_interface::ControllerI
   std::stack<int> motion_mode_stack_;
 
   bool dynamic_control_ = true;
+  bool finished_ = true;
   int control_mode_ = 0;  // set default control mode to be position control
   rclcpp::Time start_time_;
   std::unique_ptr<MotionGenerator> motion_generator_;
