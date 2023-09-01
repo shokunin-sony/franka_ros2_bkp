@@ -26,9 +26,10 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
-const int POSITION_CONTROL = 0;
-const int VELOCITY_CONTROL = 1;
-const int IMPEDANCE_CONTROL = 2;
+const int DYNAMIC_JOINT_POSITION_CONTROL = 0;
+const int DYNAMIC_JOINT_VELOCITY_CONTROL = 1;
+const int DYNAMIC_JOINT_IMPEDANCE_POSITION_CONTROL = 2;
+const int JOINT_POSITION_CONTROL = 3;
 
 namespace franka_example_controllers {
 
@@ -61,50 +62,67 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
 
   if (new_goal_is_received_) {
     start_execution_ = true;
-    RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
-    switch (control_mode_) {
-      case POSITION_CONTROL:
-        RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
-        motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-        for (int i = 0; i < num_joints; ++i) {
-          d_gains_(i) = get_node()->get_parameter("d_gains").as_double_array().at(i);
-          k_gains_(i) = get_node()->get_parameter("k_gains").as_double_array().at(i);
-        }
-        break;
-      case VELOCITY_CONTROL:
-        RCLCPP_INFO(get_node()->get_logger(), "q_vel is: '%f'", q_vel_[0]);
-        speed_generator_ = std::make_unique<SpeedGenerator>(0.1, q_, q_vel_);
-        for (int i = 0; i < num_joints; ++i) {
-          d_gains_(i) = get_node()->get_parameter("d_gains").as_double_array().at(i);
-          k_gains_(i) = get_node()->get_parameter("k_gains").as_double_array().at(i);
-        }
-        break;
-      case IMPEDANCE_CONTROL:
-        RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
-        motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
-        for (int i = 0; i < num_joints; ++i) {
-          d_gains_(i) = get_node()->get_parameter("impedance_d_gains").as_double_array().at(i);
-          k_gains_(i) = get_node()->get_parameter("impedance_k_gains").as_double_array().at(i);
-        }
-        break;
-      default:
-        break;
+
+    if (not finished_) {
+      RCLCPP_INFO(get_node()->get_logger(),
+                  "new goal will be executed after current goal reached.");
+      // if (control_mode_ = 0 || control_mode_ == 2)
+      //   q_goal_stack_.push(q_goal_);
+      // else
+      //   q_vel_stack_.push(q_vel_);
+    } else {
+      RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
+      // control_mode_ =  motion_mode_stack_.top();
+      //
+      switch (control_mode_) {
+        case DYNAMIC_JOINT_POSITION_CONTROL:
+          // q_goal_ = q_goal_stack_.top();
+          RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
+          motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
+          for (int i = 0; i < num_joints; ++i) {
+            d_gains_(i) = get_node()->get_parameter("d_gains").as_double_array().at(i);
+            k_gains_(i) = get_node()->get_parameter("k_gains").as_double_array().at(i);
+          }
+          break;
+        case DYNAMIC_JOINT_VELOCITY_CONTROL:
+          // q_vel_ = q_vel_stack_.top();
+          RCLCPP_INFO(get_node()->get_logger(), "q_vel is: '%f'", q_vel_[0]);
+          speed_generator_ = std::make_unique<SpeedGenerator>(0.1, q_, q_vel_);
+          for (int i = 0; i < num_joints; ++i) {
+            d_gains_(i) = get_node()->get_parameter("d_gains").as_double_array().at(i);
+            k_gains_(i) = get_node()->get_parameter("k_gains").as_double_array().at(i);
+          }
+          break;
+        case DYNAMIC_JOINT_IMPEDANCE_POSITION_CONTROL:
+          // q_goal_ = q_goal_stack_.top();
+          RCLCPP_INFO(get_node()->get_logger(), "q_goal is: '%f'", q_goal_[0]);
+          motion_generator_ = std::make_unique<MotionGenerator>(0.1, q_, q_goal_);
+          for (int i = 0; i < num_joints; ++i) {
+            d_gains_(i) = get_node()->get_parameter("impedance_d_gains").as_double_array().at(i);
+            k_gains_(i) = get_node()->get_parameter("impedance_k_gains").as_double_array().at(i);
+          }
+          break;
+        default:
+          break;
+      }
+      start_time_ = this->get_node()->now();
+      new_goal_is_received_ = false;
     }
-    start_time_ = this->get_node()->now();
-    new_goal_is_received_ = false;
   }
 
   if (start_execution_) {
+    // start executing after the command is received
     auto trajectory_time = this->get_node()->now() - start_time_;
-    if (control_mode_ != VELOCITY_CONTROL) {
+    if (control_mode_ != DYNAMIC_JOINT_VELOCITY_CONTROL) {
       generator_output_ = motion_generator_->getDesiredJointPositions(trajectory_time);
     } else {
       generator_output_ = speed_generator_->getDesiredJointPositions(trajectory_time);
     }
     Vector7d q_desired = generator_output_.first;
-    bool finished = generator_output_.second;
+    finished_ = generator_output_.second;
 
-    if (not finished) {
+    // send computed torques to joints
+    if (not finished_) {
       const double kAlpha = 0.99;
       dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
       Vector7d tau_d_calculated =
@@ -112,7 +130,7 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
       for (int i = 0; i < 7; ++i) {
         command_interfaces_[i].set_value(tau_d_calculated(i));
       }
-    } else if (control_mode_ != VELOCITY_CONTROL) {
+    } else if (control_mode_ != DYNAMIC_JOINT_VELOCITY_CONTROL) {
       const double kAlpha = 0.99;
       dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
       Vector7d tau_d_calculated =
@@ -155,6 +173,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
   arm_id_ = get_node()->get_parameter("arm_id").as_string();
   auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
   auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
+  // check K/d_gains
   if (k_gains.empty()) {
     RCLCPP_FATAL(get_node()->get_logger(), "k_gains parameter not set");
     return CallbackReturn::FAILURE;
@@ -178,6 +197,8 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
     k_gains_(i) = k_gains.at(i);
   }
   dq_filtered_.setZero();
+
+  // Initiate different kinds of control
   goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
       "/runtime_control/joint_position_goal", rclcpp::SystemDefaultsQoS(),
       [this](const std::shared_ptr<sensor_msgs::msg::JointState> msg) -> void {
@@ -187,7 +208,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
             joint_goal->position[3], joint_goal->position[4], joint_goal->position[5],
             joint_goal->position[6];
         new_goal_is_received_ = true;
-        control_mode_ = POSITION_CONTROL;
+        control_mode_ = DYNAMIC_JOINT_POSITION_CONTROL;
       });
   velocity_goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
       "/runtime_control/joint_velocity_goal", rclcpp::SystemDefaultsQoS(),
@@ -198,7 +219,7 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
             joint_goal->velocity[3], joint_goal->velocity[4], joint_goal->velocity[5],
             joint_goal->velocity[6];
         new_goal_is_received_ = true;
-        control_mode_ = VELOCITY_CONTROL;
+        control_mode_ = DYNAMIC_JOINT_VELOCITY_CONTROL;
       });
   impedance_goal_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
       "/runtime_control/joint_impedance_position_goal", rclcpp::SystemDefaultsQoS(),
@@ -209,7 +230,17 @@ CallbackReturn RobotInterfaceGeneralController::on_configure(
             joint_goal->position[3], joint_goal->position[4], joint_goal->position[5],
             joint_goal->position[6];
         new_goal_is_received_ = true;
-        control_mode_ = IMPEDANCE_CONTROL;
+        control_mode_ = DYNAMIC_JOINT_IMPEDANCE_POSITION_CONTROL;
+      });
+  dynamic_control_subscriber_ = get_node()->create_subscription<std_msgs::msg::String>(
+      "/runtime_control/dynamic_control_parameter", rclcpp::SystemDefaultsQoS(),
+      [this](const std::shared_ptr<std_msgs::msg::String> msg) -> void {
+        auto dynamic_control_param = std::shared_ptr<std_msgs::msg::String>();
+        dynamic_control_param = msg;
+        RCLCPP_INFO(get_node()->get_logger(), "Publishing: '%s'",
+                    dynamic_control_param->data.c_str());
+        if (dynamic_control_param->data.c_str() == "false")
+          dynamic_control_ = false;
       });
 
   return CallbackReturn::SUCCESS;
