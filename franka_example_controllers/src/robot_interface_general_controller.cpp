@@ -63,14 +63,14 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
   if (new_goal_is_received_) {
     start_execution_ = true;
 
-    if (not finished_) {
-      RCLCPP_INFO(get_node()->get_logger(),
-                  "new goal will be executed after current goal reached.");
-      // if (control_mode_ = 0 || control_mode_ == 2)
-      //   q_goal_stack_.push(q_goal_);
-      // else
-      //   q_vel_stack_.push(q_vel_);
-    } else {
+    // if (not finished_) {
+    //   RCLCPP_INFO(get_node()->get_logger(),
+    //               "new goal will be executed after current goal reached.");
+    //   // if (control_mode_ = 0 || control_mode_ == 2)
+    //   //   q_goal_stack_.push(q_goal_);
+    //   // else
+    //   //   q_vel_stack_.push(q_vel_);
+    // } else {
       RCLCPP_INFO(get_node()->get_logger(), "received new goal! start executing now.");
       // control_mode_ =  motion_mode_stack_.top();
       //
@@ -104,9 +104,9 @@ controller_interface::return_type RobotInterfaceGeneralController::update(
           break;
         default:
           break;
-      }
-      start_time_ = this->get_node()->now();
-      new_goal_is_received_ = false;
+      // }
+      // start_time_ = this->get_node()->now();
+      // new_goal_is_received_ = false;
     }
   }
 
